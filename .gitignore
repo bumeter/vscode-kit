@@ -5,3 +5,5 @@ bin/
 .bum/
 *.vsix
 out/
+products/*/dist/
+products/*/bin/

@@ -26,7 +26,7 @@ export const statusItems: { text: string; tooltip: unknown; backgroundColor: unk
 
 export const window = {
   createStatusBarItem: () => {
-    const item = { text: '', tooltip: undefined as unknown, backgroundColor: undefined as unknown, command: '', name: '', shown: false, show() { item.shown = true; }, dispose() {} };
+    const item = { text: '', tooltip: undefined as unknown, backgroundColor: undefined as unknown, command: '', name: '', shown: false, show() { item.shown = true; }, hide() { item.shown = false; }, dispose() {} };
     statusItems.push(item);
     return item;
   },

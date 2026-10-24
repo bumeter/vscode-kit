@@ -43,3 +43,20 @@ describe('renderStatus', () => {
     expect(none.tooltip).toContain('bum statusline');
   });
 });
+
+describe('renderStatus with another product\'s options', () => {
+  const usage = { id: 'claudeUsage.status', name: 'Claude Code Usage', click: 'claudeUsage.click', fallback: '5h/7d: set up', noLimits: 'usageSetup' as const,
+    links: [{ key: 'setupTracking' as const, command: 'claudeUsage.setupTracking' }, { key: 'refresh' as const, command: 'claudeUsage.refresh' }] };
+
+  it('uses its own fallback text, hint and links', () => {
+    const v = renderStatus({ five_hour: null, seven_day: null, stale: false, blocked: null }, null, null, 'en', NOW, usage);
+    expect(v.text).toBe('$(flame) 5h/7d: set up');
+    expect(v.tooltip).toContain('Click to set up quota tracking');
+    expect(v.tooltip).toContain('command:claudeUsage.setupTracking');
+    expect(v.tooltip).not.toContain('bumeter.openOverview');
+  });
+
+  it('shows the same numbers as Bumeter', () => {
+    expect(renderStatus(limits(62, 41), now(180_000, 5), 'p', 'en', NOW, usage).text).toBe('$(flame) 5h 62% · 7d 41% · ctx 180K');
+  });
+});
