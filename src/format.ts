@@ -35,17 +35,27 @@ export function textBar(pct: number, width = 10): string {
   return '▰'.repeat(full) + '▱'.repeat(width - full);
 }
 
+/** A finer bar for the status bar, in eighths of a cell: ██████▍░░░ */
+export function smoothBar(pct: number, width = 6): string {
+  const eighths = Math.max(0, Math.min(width * 8, Math.round((pct / 100) * width * 8)));
+  const full = Math.floor(eighths / 8);
+  const part = eighths % 8 ? '▏▎▍▌▋▊▉'[(eighths % 8) - 1] : '';
+  return ('█'.repeat(full) + part).padEnd(width, '░');
+}
+
 const STRINGS = {
   vi: {
     fiveHour: '5 giờ', sevenDay: '7 ngày', resetsAt: 'reset {time} · còn {left}', hitsAt: 'theo tốc độ này chạm 100% lúc {time}',
     blocked: 'Đang bị chặn đến {time}', stale: 'Số hạn mức đã cũ (Claude Code chưa gửi số mới).',
     ctx: 'Phiên mới nhất của {project}: context {ctx}', ctxOver: 'vượt ngưỡng {limit}, nên /compact.',
+    sbHits: '→ 100% lúc {time}', sbSafe: '✓ đủ đến reset', sbLeft: '{five} · {seven} còn', sbReset: 'reset {time}',
     scanning: 'Bumeter: đang đọc log…', noBum: 'Bumeter: không tìm thấy lệnh `bum`', error: 'Bumeter: lỗi', refresh: 'Làm mới',
   },
   en: {
     fiveHour: '5-hour', sevenDay: 'Weekly', resetsAt: 'resets {time} · in {left}', hitsAt: 'at this pace it hits 100% at {time}',
     blocked: 'Blocked until {time}', stale: 'Quota numbers are stale (Claude Code has not sent new ones).',
     ctx: 'Latest session of {project}: context {ctx}', ctxOver: 'over the {limit} threshold, consider /compact.',
+    sbHits: '→ 100% at {time}', sbSafe: '✓ lasts to reset', sbLeft: '{five} · {seven} left', sbReset: 'resets {time}',
     scanning: 'Bumeter: reading logs…', noBum: 'Bumeter: `bum` command not found', error: 'Bumeter: error', refresh: 'Refresh',
   },
 } as const;

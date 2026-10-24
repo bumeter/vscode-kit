@@ -4,3 +4,4 @@ export * from './format';
 export * from './project';
 export * from './rpc';
 export * from './status';
+export * from './styles';
