@@ -1,0 +1,25 @@
+# Tag vX.Y.Z → publish @bumeter/vscode-kit X.Y.Z to npm (the tag must match package.json).
+# Trusted Publishing: npm trusts this workflow through GitHub OIDC, so there is no npm token.
+name: Release
+on:
+  push:
+    tags: ['v*']
+jobs:
+  publish:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      # Trusted Publishing needs npm 11.5.1 or later.
+      - run: npm install -g npm@latest
+      - run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      - run: npm ci
+      - run: npx vitest run
+      - run: npm publish

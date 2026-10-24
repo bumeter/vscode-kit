@@ -1,4 +1,5 @@
-// Pure formatting and wording, shared by the status bar and the Explorer marks.
+// Pure formatting and the wording shared by every Bumeter extension. Each product keeps its own
+// strings next to it and builds its `t` with `localize`.
 
 export type Lang = 'vi' | 'en';
 
@@ -38,39 +39,26 @@ const STRINGS = {
   vi: {
     fiveHour: '5 giờ', sevenDay: '7 ngày', resetsAt: 'reset {time} · còn {left}', hitsAt: 'theo tốc độ này chạm 100% lúc {time}',
     blocked: 'Đang bị chặn đến {time}', stale: 'Số hạn mức đã cũ (Claude Code chưa gửi số mới).',
-    noLimits: 'Chưa có số 5h/7d: bật theo dõi hạn mức trong app Bumeter, hoặc dùng `bum statusline`.',
     ctx: 'Phiên mới nhất của {project}: context {ctx}', ctxOver: 'vượt ngưỡng {limit}, nên /compact.',
-    scanning: 'Bumeter: đang đọc log…', noBum: 'Bumeter: không tìm thấy lệnh `bum`', error: 'Bumeter: lỗi',
-    openOverview: 'Mở Overview', refresh: 'Làm mới',
-    usageSetup: 'Chưa có số 5h/7d. Bấm để bật theo dõi hạn mức: thêm một hook vào statusLine của Claude Code (có sao lưu, gỡ được).',
-    usageWaiting: 'Đã bật theo dõi. Số 5h/7d hiện sau câu trả lời tiếp theo của Claude Code.',
-    setupTracking: 'Bật theo dõi hạn mức', removeTracking: 'Gỡ theo dõi hạn mức', getFull: 'Bumeter đầy đủ: Overview, Skill, file',
-    modeRecord: 'Chỉ ghi số', modeRecordDetail: 'Dòng statusline hiện tại của bạn giữ nguyên',
-    modeShow: 'Ghi số và hiện trên statusline của Claude Code', modeShowDetail: 'Thêm quota và context vào cuối dòng statusline',
-    apply: 'Áp dụng', alreadyOn: 'Đã bật theo dõi hạn mức, không cần đổi gì.', removed: 'Đã gỡ hook: statusLine của Claude Code về như trước.',
-    notTracked: 'Chưa bật theo dõi hạn mức nên không có gì để gỡ.',
-    reads: 'Agent đọc {n} lần trong 7 ngày', readsNoEdit: ', không sửa lần nào', readsEdits: ', sửa {n} lần',
+    scanning: 'Bumeter: đang đọc log…', noBum: 'Bumeter: không tìm thấy lệnh `bum`', error: 'Bumeter: lỗi', refresh: 'Làm mới',
   },
   en: {
     fiveHour: '5-hour', sevenDay: 'Weekly', resetsAt: 'resets {time} · in {left}', hitsAt: 'at this pace it hits 100% at {time}',
     blocked: 'Blocked until {time}', stale: 'Quota numbers are stale (Claude Code has not sent new ones).',
-    noLimits: 'No 5h/7d numbers yet: turn on quota tracking in the Bumeter app, or use `bum statusline`.',
     ctx: 'Latest session of {project}: context {ctx}', ctxOver: 'over the {limit} threshold, consider /compact.',
-    scanning: 'Bumeter: reading logs…', noBum: 'Bumeter: `bum` command not found', error: 'Bumeter: error',
-    openOverview: 'Open Overview', refresh: 'Refresh',
-    usageSetup: 'No 5h/7d numbers yet. Click to set up quota tracking: it adds a hook to Claude Code\'s statusLine (backed up, undoable).',
-    usageWaiting: 'Tracking is on. The 5h/7d numbers appear after Claude Code\'s next reply.',
-    setupTracking: 'Set up quota tracking', removeTracking: 'Remove quota tracking', getFull: 'Full Bumeter: Overview, skills, files',
-    modeRecord: 'Record only', modeRecordDetail: 'Your current status line stays as it is',
-    modeShow: 'Record and show on Claude Code\'s status line', modeShowDetail: 'Adds quota and context at the end of the status line',
-    apply: 'Apply', alreadyOn: 'Quota tracking is already on; nothing to change.', removed: 'Hook removed: Claude Code\'s statusLine is back as it was.',
-    notTracked: 'Quota tracking is not on, so there is nothing to remove.',
-    reads: 'Read {n} times by agents in 7 days', readsNoEdit: ', never edited', readsEdits: ', edited {n} times',
+    scanning: 'Bumeter: reading logs…', noBum: 'Bumeter: `bum` command not found', error: 'Bumeter: error', refresh: 'Refresh',
   },
 } as const;
 
+export type Strings<K extends string> = Record<Lang, Record<K, string>>;
+
+/** A `t(lang, key, params)` over a table of strings; `{name}` in a string is replaced by `params.name`. */
+export function localize<K extends string>(table: Strings<K>) {
+  return (lang: Lang, key: K, params: Record<string, string | number> = {}): string =>
+    table[lang][key].replace(/\{(\w+)\}/g, (_, k: string) => String(params[k] ?? `{${k}}`));
+}
+
 export type Key = keyof typeof STRINGS.en;
 
-export function t(lang: Lang, key: Key, params: Record<string, string | number> = {}): string {
-  return STRINGS[lang][key].replace(/\{(\w+)\}/g, (_, k: string) => String(params[k] ?? `{${k}}`));
-}
+/** The shared strings. */
+export const t = localize<Key>(STRINGS);

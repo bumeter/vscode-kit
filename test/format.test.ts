@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fmtCountdown, fmtTokens, langOf, t, textBar } from '../src/format';
+import { fmtCountdown, fmtTokens, langOf, localize, t, textBar } from '../src/format';
 
 describe('format', () => {
   it('tokens like the app', () => {
@@ -17,7 +17,12 @@ describe('format', () => {
   });
   it('language and wording', () => {
     expect([langOf('vi'), langOf('vi-VN'), langOf('en-US'), langOf('ja')]).toEqual(['vi', 'vi', 'en', 'en']);
-    expect(t('en', 'reads', { n: 7 })).toBe('Read 7 times by agents in 7 days');
-    expect(t('vi', 'reads', { n: 7 })).toBe('Agent đọc 7 lần trong 7 ngày');
+    expect(t('en', 'resetsAt', { time: '14:30', left: '1h20' })).toBe('resets 14:30 · in 1h20');
+    expect(t('vi', 'refresh')).toBe('Làm mới');
+  });
+  it('a product builds its own t with localize; a missing param stays visible', () => {
+    const own = localize({ vi: { hi: 'Chào {name}' }, en: { hi: 'Hi {name}' } });
+    expect(own('en', 'hi', { name: 'Bum' })).toBe('Hi Bum');
+    expect(own('vi', 'hi')).toBe('Chào {name}');
   });
 });

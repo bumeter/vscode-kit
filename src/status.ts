@@ -1,7 +1,7 @@
 // The status bar item: 5-hour and weekly quota, and the context of this workspace's latest session.
 import * as vscode from 'vscode';
 import { fmtClock, fmtCountdown, fmtTokens, t, textBar } from './format';
-import type { Key, Lang } from './format';
+import type { Lang } from './format';
 import type { RpcClient } from './rpc';
 
 export interface Window { used_percentage: number; resets_at: number }
@@ -19,7 +19,7 @@ export interface ProjectNow { latest: { session_id: string; ts: string; context:
 export type Level = 'normal' | 'warning' | 'error';
 export interface StatusView { text: string; tooltip: string; level: Level }
 
-/** What differs between the products that show this item (Bumeter, Claude Code Usage). */
+/** What differs between the products that show this item (Bumeter, Claude Code Usage). Texts are already in the user's language. */
 export interface StatusOptions {
   id: string;
   name: string;
@@ -28,19 +28,10 @@ export interface StatusOptions {
   /** Item text when there are no numbers yet. */
   fallback: string;
   /** Tooltip line when there are no 5h/7d numbers. */
-  noLimits: Key;
+  noLimits: string;
   /** Links at the bottom of the tooltip. */
-  links: { key: Key; command: string }[];
+  links: { label: string; command: string }[];
 }
-
-export const BUMETER_STATUS: StatusOptions = {
-  id: 'bumeter.status',
-  name: 'Bumeter',
-  click: 'bumeter.openOverview',
-  fallback: 'Bumeter',
-  noLimits: 'noLimits',
-  links: [{ key: 'openOverview', command: 'bumeter.openOverview' }, { key: 'refresh', command: 'bumeter.refresh' }],
-};
 
 /** A session counts as current when its last call is this recent. */
 export const ACTIVE_SECS = 30 * 60;
@@ -49,7 +40,7 @@ export const WARN_PCT = 70;
 export const ERROR_PCT = 90;
 
 /** What the item shows, from the host's answers. Pure, for tests. */
-export function renderStatus(limits: LimitState | null, now: ProjectNow | null, project: string | null, lang: Lang, nowSecs: number, o: StatusOptions = BUMETER_STATUS): StatusView {
+export function renderStatus(limits: LimitState | null, now: ProjectNow | null, project: string | null, lang: Lang, nowSecs: number, o: StatusOptions): StatusView {
   const parts: string[] = [];
   const lines: string[] = [];
   let level: Level = 'normal';
@@ -73,7 +64,7 @@ export function renderStatus(limits: LimitState | null, now: ProjectNow | null, 
     }
     if (limits.stale) lines.push(`_${t(lang, 'stale')}_`);
   }
-  if (!parts.length) lines.push(t(lang, o.noLimits));
+  if (!parts.length) lines.push(o.noLimits);
 
   const latest = now?.latest;
   if (latest && project) {
@@ -87,7 +78,7 @@ export function renderStatus(limits: LimitState | null, now: ProjectNow | null, 
   }
 
   const text = `$(flame) ${parts.length ? parts.join(' · ') : o.fallback}`;
-  lines.push('', o.links.map((l) => `[${t(lang, l.key)}](command:${l.command})`).join(' · '));
+  lines.push('', o.links.map((l) => `[${l.label}](command:${l.command})`).join(' · '));
   return { text, tooltip: lines.join('\n\n'), level };
 }
 
@@ -99,7 +90,7 @@ export class StatusBar implements vscode.Disposable {
   private hidden = false;
 
   /** `o` is read on every refresh, so a product may change its links or hint as its state changes. */
-  constructor(private readonly rpc: RpcClient, private readonly project: string | null, private readonly lang: Lang, private readonly o: StatusOptions = BUMETER_STATUS, pollMs = 30_000) {
+  constructor(private readonly rpc: RpcClient, private readonly project: string | null, private readonly lang: Lang, private readonly o: StatusOptions, pollMs = 30_000) {
     this.item = vscode.window.createStatusBarItem(o.id, vscode.StatusBarAlignment.Right, 100);
     this.item.name = o.name;
     this.item.command = o.click;

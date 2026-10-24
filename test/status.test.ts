@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { renderStatus } from '../src/status';
-import type { LimitState, ProjectNow } from '../src/status';
+import type { LimitState, ProjectNow, StatusOptions } from '../src/status';
+
+const OPTS: StatusOptions = {
+  id: 'bumeter.status', name: 'Bumeter', click: 'bumeter.openOverview', fallback: 'Bumeter',
+  noLimits: 'No 5h/7d numbers yet: use `bum statusline`.',
+  links: [{ label: 'Open Overview', command: 'bumeter.openOverview' }, { label: 'Refresh', command: 'bumeter.refresh' }],
+};
 
 const NOW = Date.parse('2026-10-24T10:00:00Z') / 1000;
 const limits = (five: number, seven: number, extra: Partial<LimitState> = {}): LimitState => ({
@@ -10,7 +16,7 @@ const now = (context: number, minutesAgo: number): ProjectNow => ({ latest: { se
 
 describe('renderStatus', () => {
   it('shows both windows and the current session context', () => {
-    const v = renderStatus(limits(62, 41), now(180_000, 5), 'bumeter', 'en', NOW);
+    const v = renderStatus(limits(62, 41), now(180_000, 5), 'bumeter', 'en', NOW, OPTS);
     expect(v.text).toBe('$(flame) 5h 62% · 7d 41% · ctx 180K');
     expect(v.level).toBe('normal');
     expect(v.tooltip).toContain('**5-hour** `▰▰▰▰▰▰▱▱▱▱` 62% · resets');
@@ -19,44 +25,44 @@ describe('renderStatus', () => {
   });
 
   it('turns yellow past 70% or a large context, red past 90% or when blocked', () => {
-    expect(renderStatus(limits(75, 10), null, null, 'en', NOW).level).toBe('warning');
-    const big = renderStatus(limits(10, 10), now(312_000, 1), 'p', 'en', NOW);
+    expect(renderStatus(limits(75, 10), null, null, 'en', NOW, OPTS).level).toBe('warning');
+    const big = renderStatus(limits(10, 10), now(312_000, 1), 'p', 'en', NOW, OPTS);
     expect(big.level).toBe('warning');
     expect(big.text).toContain('ctx 312K $(warning)');
     expect(big.tooltip).toContain('consider /compact');
-    expect(renderStatus(limits(95, 10), null, null, 'en', NOW).level).toBe('error');
-    const blocked = renderStatus(limits(100, 10, { blocked: { limit_type: 'five_hour', resets_at: NOW + 600 } }), null, null, 'vi', NOW);
+    expect(renderStatus(limits(95, 10), null, null, 'en', NOW, OPTS).level).toBe('error');
+    const blocked = renderStatus(limits(100, 10, { blocked: { limit_type: 'five_hour', resets_at: NOW + 600 } }), null, null, 'vi', NOW, OPTS);
     expect(blocked.level).toBe('error');
     expect(blocked.tooltip.startsWith('$(error) Đang bị chặn đến')).toBe(true);
   });
 
   it('a forecast that runs out before the reset is a warning, with the time', () => {
-    const v = renderStatus(limits(40, 10, { forecast_five_hour: { hits_at: NOW + 1_800, at_risk: true } }), null, null, 'en', NOW);
+    const v = renderStatus(limits(40, 10, { forecast_five_hour: { hits_at: NOW + 1_800, at_risk: true } }), null, null, 'en', NOW, OPTS);
     expect(v.level).toBe('warning');
     expect(v.tooltip).toContain('at this pace it hits 100%');
   });
 
   it('an old session is not "current"; no numbers says how to get them', () => {
-    expect(renderStatus(limits(10, 10), now(500_000, 120), 'p', 'en', NOW).text).not.toContain('ctx');
-    const none = renderStatus({ five_hour: null, seven_day: null, stale: false, blocked: null }, null, null, 'en', NOW);
+    expect(renderStatus(limits(10, 10), now(500_000, 120), 'p', 'en', NOW, OPTS).text).not.toContain('ctx');
+    const none = renderStatus({ five_hour: null, seven_day: null, stale: false, blocked: null }, null, null, 'en', NOW, OPTS);
     expect(none.text).toBe('$(flame) Bumeter');
     expect(none.tooltip).toContain('bum statusline');
   });
 });
 
-describe('renderStatus with another product\'s options', () => {
-  const usage = { id: 'claudeUsage.status', name: 'Claude Code Usage', click: 'claudeUsage.click', fallback: '5h/7d: set up', noLimits: 'usageSetup' as const,
-    links: [{ key: 'setupTracking' as const, command: 'claudeUsage.setupTracking' }, { key: 'refresh' as const, command: 'claudeUsage.refresh' }] };
+describe('renderStatus options', () => {
+  const usage: StatusOptions = { id: 'claudeUsage.status', name: 'Claude Code Usage', click: 'claudeUsage.click', fallback: '5h/7d: set up',
+    noLimits: 'Click to set up quota tracking.', links: [{ label: 'Set up', command: 'claudeUsage.setupTracking' }] };
 
-  it('uses its own fallback text, hint and links', () => {
+  it('the product\'s own fallback text, hint and links', () => {
     const v = renderStatus({ five_hour: null, seven_day: null, stale: false, blocked: null }, null, null, 'en', NOW, usage);
     expect(v.text).toBe('$(flame) 5h/7d: set up');
-    expect(v.tooltip).toContain('Click to set up quota tracking');
-    expect(v.tooltip).toContain('command:claudeUsage.setupTracking');
+    expect(v.tooltip).toContain('Click to set up quota tracking.');
+    expect(v.tooltip).toContain('[Set up](command:claudeUsage.setupTracking)');
     expect(v.tooltip).not.toContain('bumeter.openOverview');
   });
 
-  it('shows the same numbers as Bumeter', () => {
+  it('the same numbers whatever the product', () => {
     expect(renderStatus(limits(62, 41), now(180_000, 5), 'p', 'en', NOW, usage).text).toBe('$(flame) 5h 62% · 7d 41% · ctx 180K');
   });
 });
