@@ -25,7 +25,7 @@ const bar = new StatusBar(rpc, projectOf(vscode.workspace.workspaceFolders), lan
 | `format` | tokens, countdowns, clock, text bar; shared strings (vi/en) and `localize` for a product's own |
 | `project` | `projectOf`: a workspace's project name, the way Bumeter names them |
 
-The package ships compiled JavaScript and types; an extension bundles it with esbuild (`external: ['vscode']`). To try a change in an extension without publishing: `npm run build && npm link`, then `npm link @bumeter/vscode-kit` there.
+Each module can also be imported on its own (`@bumeter/vscode-kit/format`); `format`, `binary` and `project` do not load `vscode`, so a product's pure code can be unit-tested without it. The package ships compiled JavaScript and types, with subpaths in `exports`: an extension bundles it with esbuild (`external: ['vscode']`) and type-checks with `"moduleResolution": "bundler"`. To try a change in an extension without publishing: `npm run build && npm link`, then `npm link @bumeter/vscode-kit` there.
 
 Release: bump `version` in `package.json`, tag `vX.Y.Z`; the workflow publishes to npm.
 

@@ -3,12 +3,19 @@
   "version": "0.1.0",
   "description": "Shared code of the Bumeter VS Code extensions: the `bum rpc` client, finding the bundled `bum`, formatting, and the quota/context status bar item.",
   "license": "GPL-3.0-or-later",
-  "repository": { "type": "git", "url": "https://github.com/bumeter/vscode-kit" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bumeter/vscode-kit"
+  },
   "homepage": "https://bumeter.cc",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist"],
-  "publishConfig": { "access": "public" },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run",
@@ -23,5 +30,15 @@
     "@types/vscode": "1.85.0",
     "typescript": "^5.6.0",
     "vitest": "^3.2.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "default": "./dist/*.js"
+    }
   }
 }
