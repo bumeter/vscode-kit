@@ -2,4 +2,6 @@ node_modules/
 dist/
 media/ui/
 bin/
+.bum/
 *.vsix
+out/
