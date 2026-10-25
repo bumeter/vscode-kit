@@ -66,3 +66,43 @@ describe('renderStatus options', () => {
     expect(renderStatus(limits(62, 41), now(180_000, 5), 'p', 'en', NOW, usage).text).toBe('$(flame) 5h 62% · 7d 41% · ctx 180K');
   });
 });
+
+describe('renderStatus title, html and extra', () => {
+  const rich: StatusOptions = { ...OPTS, title: 'Claude Code Usage', html: true, extra: () => '---\n\n**Today** 12.4M tokens' };
+
+  it('a bold title first, coloured percentages, the extra lines before the links', () => {
+    const v = renderStatus(limits(75, 41), null, null, 'en', NOW, rich);
+    expect(v.tooltip.startsWith('**Claude Code Usage**')).toBe(true);
+    expect(v.tooltip).toContain('<span style="color:#d29922;">75%</span>');
+    expect(v.tooltip).toContain('<span style="color:#3fb950;">41%</span>');
+    expect(v.tooltip.indexOf('**Today**')).toBeGreaterThan(v.tooltip.indexOf('Weekly'));
+    expect(v.tooltip.indexOf('**Today**')).toBeLessThan(v.tooltip.indexOf('[Open Overview]'));
+  });
+
+  it('the title stays first when blocked', () => {
+    const v = renderStatus(limits(100, 10, { blocked: { limit_type: 'five_hour', resets_at: NOW + 600 } }), null, null, 'en', NOW, rich);
+    expect(v.tooltip.startsWith('**Claude Code Usage**\n\n$(error)')).toBe(true);
+    expect(v.tooltip).toContain('<span style="color:#f85149;">100%</span>');
+  });
+
+  it('without them, or with an empty extra, the tooltip is exactly as before', () => {
+    const before = renderStatus(limits(75, 41), now(180_000, 5), 'p', 'en', NOW, OPTS).tooltip;
+    expect(renderStatus(limits(75, 41), now(180_000, 5), 'p', 'en', NOW, { ...OPTS, extra: () => '' }).tooltip).toBe(before);
+    expect(before).not.toContain('<span');
+  });
+});
+
+describe('StatusBar html', () => {
+  it('lets the tooltip use HTML only when asked', async () => {
+    const { StatusBar } = await import('../src/status');
+    const { statusItems } = await import('./vscode');
+    const rpc = { call: async (m: string) => (m === 'limit_state' ? limits(62, 41) : null) } as unknown as import('../src/rpc').RpcClient;
+    for (const html of [true, false]) {
+      statusItems.length = 0;
+      const bar = new StatusBar(rpc, null, 'en', { ...OPTS, html });
+      await bar.refresh();
+      expect((statusItems.at(-1)!.tooltip as { supportHtml: boolean }).supportHtml).toBe(html);
+      bar.dispose();
+    }
+  });
+});

@@ -5,6 +5,7 @@ export class ThemeColor { constructor(public readonly id: string) {} }
 
 export class MarkdownString {
   isTrusted: unknown;
+  supportHtml = false;
   constructor(public value = '', public supportThemeIcons = false) {}
 }
 

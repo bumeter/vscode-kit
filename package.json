@@ -1,6 +1,6 @@
 {
   "name": "@bumeter/vscode-kit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Shared code of the Bumeter VS Code extensions: the `bum rpc` client, finding the bundled `bum`, formatting, and the quota/context status bar item.",
   "license": "GPL-3.0-or-later",
   "repository": {

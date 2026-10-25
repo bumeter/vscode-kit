@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import { fmtClock, fmtCountdown, fmtTokens, t, textBar } from './format';
 import type { Lang } from './format';
 import type { RpcClient } from './rpc';
-import { styleSegments, usageLevel } from './styles';
+import { ERROR_PCT, styleSegments, usageLevel, WARN_PCT } from './styles';
 import type { Level, Segment, StyleChoice, Usage, UsageWindow } from './styles';
 
 export interface Window { used_percentage: number; resets_at: number }
@@ -37,7 +37,17 @@ export interface StatusOptions {
   style?: StyleChoice;
   /** The template of the `custom` style. */
   template?: string;
+  /** A bold first line of the tooltip. */
+  title?: string;
+  /** Colour the 5h/7d percentages by level; the tooltip then allows HTML. */
+  html?: boolean;
+  /** More Markdown before the links, asked on every draw; empty adds nothing. */
+  extra?: () => string;
 }
+
+/** The tooltip colours of a percentage, for `html`. */
+export const PCT_COLOR: Record<Level, string> = { normal: '#3fb950', warning: '#d29922', error: '#f85149' };
+const pctLevel = (pct: number): Level => (pct >= ERROR_PCT ? 'error' : pct >= WARN_PCT ? 'warning' : 'normal');
 
 /** A session counts as current when its last call is this recent. */
 export const ACTIVE_SECS = 30 * 60;
@@ -60,9 +70,10 @@ export function usageOf(limits: LimitState | null, now: ProjectNow | null, proje
 export function renderStatus(limits: LimitState | null, now: ProjectNow | null, project: string | null, lang: Lang, nowSecs: number, o: StatusOptions): StatusView {
   const u = usageOf(limits, now, project, nowSecs);
   const lines: string[] = [];
+  const pct = (p: number) => (o.html ? `<span style="color:${PCT_COLOR[pctLevel(p)]};">${p}%</span>` : `${p}%`);
   const win = (name: string, w: UsageWindow | null) => {
     if (!w) return;
-    lines.push(`**${name}** \`${textBar(w.pct)}\` ${w.pct}% · ${t(lang, 'resetsAt', { time: fmtClock(w.resetsAt), left: fmtCountdown(w.resetsAt, nowSecs) })}`);
+    lines.push(`**${name}** \`${textBar(w.pct)}\` ${pct(w.pct)} · ${t(lang, 'resetsAt', { time: fmtClock(w.resetsAt), left: fmtCountdown(w.resetsAt, nowSecs) })}`);
     if (w.atRisk && w.hitsAt != null) lines.push(`$(warning) ${t(lang, 'hitsAt', { time: fmtClock(w.hitsAt) })}`);
   };
   win(t(lang, 'fiveHour'), u.five);
@@ -74,6 +85,9 @@ export function renderStatus(limits: LimitState | null, now: ProjectNow | null, 
     const over = u.ctx.tokens > u.ctx.threshold;
     lines.push(`${t(lang, 'ctx', { project, ctx: fmtTokens(u.ctx.tokens) })}${over ? ` — ${t(lang, 'ctxOver', { limit: fmtTokens(u.ctx.threshold) })}` : ''}`);
   }
+  if (o.title) lines.unshift(`**${o.title}**`);
+  const extra = o.extra?.();
+  if (extra) lines.push(extra);
   lines.push('', o.links.map((l) => `[${l.label}](command:${l.command})`).join(' · '));
 
   const level = usageLevel(u);
@@ -136,6 +150,7 @@ export class StatusBar implements vscode.Disposable {
     while (this.items.length > v.items.length) this.items.pop()!.dispose();
     const md = new vscode.MarkdownString(v.tooltip, true);
     md.isTrusted = { enabledCommands: this.o.links.map((l) => l.command) };
+    md.supportHtml = !!this.o.html;
     v.items.forEach((seg, i) => {
       if (!this.items[i]) {
         const item = vscode.window.createStatusBarItem(i ? `${this.o.id}.${i}` : this.o.id, vscode.StatusBarAlignment.Right, 100 - i / 100);
