@@ -85,6 +85,11 @@ describe('renderStatus title, html and extra', () => {
     expect(v.tooltip).toContain('<span style="color:#f85149;">100%</span>');
   });
 
+  it('the forecast line is red when at_risk, with html', () => {
+    const v = renderStatus(limits(40, 10, { forecast_five_hour: { hits_at: NOW + 1_800, at_risk: true } }), null, null, 'en', NOW, rich);
+    expect(v.tooltip).toContain('$(warning) <span style="color:#f85149;">at this pace it hits 100% at');
+  });
+
   it('without them, or with an empty extra, the tooltip is exactly as before', () => {
     const before = renderStatus(limits(75, 41), now(180_000, 5), 'p', 'en', NOW, OPTS).tooltip;
     expect(renderStatus(limits(75, 41), now(180_000, 5), 'p', 'en', NOW, { ...OPTS, extra: () => '' }).tooltip).toBe(before);

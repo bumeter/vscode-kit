@@ -74,7 +74,10 @@ export function renderStatus(limits: LimitState | null, now: ProjectNow | null, 
   const win = (name: string, w: UsageWindow | null) => {
     if (!w) return;
     lines.push(`**${name}** \`${textBar(w.pct)}\` ${pct(w.pct)} · ${t(lang, 'resetsAt', { time: fmtClock(w.resetsAt), left: fmtCountdown(w.resetsAt, nowSecs) })}`);
-    if (w.atRisk && w.hitsAt != null) lines.push(`$(warning) ${t(lang, 'hitsAt', { time: fmtClock(w.hitsAt) })}`);
+    if (w.atRisk && w.hitsAt != null) {
+      const text = t(lang, 'hitsAt', { time: fmtClock(w.hitsAt) });
+      lines.push(o.html ? `$(warning) <span style="color:${PCT_COLOR.error};">${text}</span>` : `$(warning) ${text}`);
+    }
   };
   win(t(lang, 'fiveHour'), u.five);
   win(t(lang, 'sevenDay'), u.seven);
